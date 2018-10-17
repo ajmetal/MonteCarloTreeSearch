@@ -5,7 +5,7 @@ from math import sqrt, log, inf
 from random import random, randint
 
 num_nodes = 100
-explore_fraction = 2.
+explore_fraction = 1.5
 
 def heuristic(node):
     winrate = node.wins/node.visits
