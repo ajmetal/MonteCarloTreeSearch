@@ -12,11 +12,12 @@ def heuristic(node):
     return random()
 
 def get_leaves(node, leaf_nodes):
-    for child in node.child_nodes:
-        for action in child.untried_actions:
-            if child.child_nodes[action] != None:
-                heappush(leaf_nodes, (heuristic(child), child))
-                break
+    for action in node.untried_actions:
+        if action not in node.child_nodes.keys():
+            heappush(leaf_nodes, (heuristic(node), node))
+            break
+        else:
+            get_leaves(node.child_nodes[action], leaf_nodes)
 
 def traverse_nodes(node, board, state, identity):
     """ Traverses the tree until the end criterion are met.
@@ -33,19 +34,23 @@ def traverse_nodes(node, board, state, identity):
     leaf_nodes = []
 
     get_leaves(node, leaf_nodes)
+    leaf = None
+    try:
+        val, leaf = heappop(leaf_nodes)
+    except:
+        leaf = None
 
-    val, leaf = heappop(leaf_nodes)
 
     return leaf
 
 def calculate_state(node, board, state):
     if node.parent == None:
         return state
-    else
+    else:
         new_state = calculate_state(node.parent, board, state)
         return board.next_state(new_state, node.parent_action)
 
-def expand_leaf(node, board, state):
+def expand_leaf(node, board, state, identity):
     """ Adds a new leaf to the tree by creating a new child node for the given node.
 
     Args:
@@ -61,17 +66,22 @@ def expand_leaf(node, board, state):
 
     new_action = None
     for action in node.untried_actions:
-        if node.child_nodes[action] == None:
+        if action not in node.child_nodes.keys():
             new_action = action
             break
 
-    new_state = board.next_state(board, new_action)
+    new_state = board.next_state(state, new_action)
     new_node = MCTSNode(parent=node, parent_action=new_action, action_list=board.legal_actions(new_state))
     #node.child_nodes[action] = MCTSNode(parent=node, parent_action=new_action, action_list=board.legal_actions(new_state))
 
-    new_node.wins = rollout(board, new_state)
+    if(rollout(board, new_state)[identity] == 1):
+        new_node.wins = 1
+    else:
+        new_node.wins = 0
+
+    new_node.visits = 1
     node.child_nodes[action] = new_node
-    backpropagate(new_node, 0)
+    backpropagate(node, new_node.wins)
 
     return node
     # Hint: return new_node
@@ -85,12 +95,12 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
-    while !board.is_ended(state):
+    while not board.is_ended(state):
         actions = board.legal_actions(state)
         action = actions[randint(0, len(actions) - 1)]
         state = board.next_state(state, action)
 
-    return board.points_value(state)
+    return board.points_values(state)
 
 
 
@@ -102,8 +112,10 @@ def backpropagate(node, won):
         won:    An indicator of whether the bot won or lost the game.
 
     """
+    node.visits += 1
+    node.wins += won
     if node.parent != None:
-        backpropagate(node.parent, won + node.wins)
+        backpropagate(node.parent, won)
 
 
 def think(board, state):
@@ -128,15 +140,17 @@ def think(board, state):
 
         # Do MCTS - This is all you!
         leaf = traverse_nodes(node, board, sampled_game, identity_of_bot)
-        expand_leaf(leaf, board, sampled_game)
+        if leaf == None:
+            break
+        expand_leaf(leaf, board, sampled_game, identity_of_bot)
 
     max_val = -inf
     max_node = None
     for child in root_node.child_nodes:
-        if child.wins / child.visits > max_val:
+        if root_node.child_nodes[child].wins / root_node.child_nodes[child].visits > max_val:
             max_node = child
-            max_val = child.wins/child.visits
+            max_val = root_node.child_nodes[child].wins / root_node.child_nodes[child].visits
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    return max_node.parent_action
+    return root_node.child_nodes[max_node].parent_action
