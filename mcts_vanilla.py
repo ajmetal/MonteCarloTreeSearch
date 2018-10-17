@@ -16,38 +16,28 @@ def traverse_nodes(node, board, state, identity):
         identity:   The bot's identity, either 'red' or 'blue'.
 
     Returns:        A node from which the next stage of the search can proceed.
-
     """
-    min_child = None
-    max_actions = 0
-    for child in node.child_nodes:
-        actions = len(child.untried_actions)
-        if actions > 0 and actions > max_actions:
-            min_child = child
-            max_actions = actions
 
-    #leaf = None
-    if max_actions is 0:
-        for child in node.child_nodes:
-            nextState = board.next_state(state, child.parent_action)
-            min_child = traverse_nodes(child, board, nextState, board.current_player(nextState))
-            if min_child is not None:
-                break
+    def utc_sort(child):
+        return child.wins / child.visits + sqrt(2*log(node.visits) / child.visits)
 
-        """if child.visits is 0:
-            return expand_leaf(child, board, board.next_state(state, child.parent_action))
-        if child.visits < min_visits:
-            min_visits = child.visits
-            min_child = child"""
-                
-    #return leaf_node
-    #board.next_state(state, min_child.parent_action)
-    #return traverse_nodes(min_child, board, board.next_state(state, min_child.parent_action), identity)
+    def select_most_urgent(node):
+        return sorted(node.child_nodes, utc_sort)[-1]
 
-    return min_child, board.next_state(min_child.parent_action)
+    #find the node that has child and no unexplored actions
+    while node.untried_actions == [] and len(node.child_nodes) != 0:
+        #use UTC to find the most urgent node
+        node = select_most_urgent(node)
+        state = board.next_state(node.parent_action)
 
+    if node.untried_actions != []:
+        #select an unexpanded node at random
+        r_action = choice(node.untried_actions)
+        node.untried_actions.remove(r_action)
+        #expand it
+        return expand_leaf(node, board, board.next_state(r_action))
 
-
+    return None
 
 def expand_leaf(node, board, state):
     """ Adds a new leaf to the tree by creating a new child node for the given node.
@@ -60,14 +50,15 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-    #root_node = MCTSNode(parent=None, parent_action=None, action_list=board.legal_actions(state))
-    action = node.untried_actions[0]
-    node.untried_actions.remove(action)
-    next_state = board.next_state(state, action)
-    new_node = MCTSNode(parent=node, parent_action=action, action_list=board.legal_actions(next_state))
-    node.child_nodes[action] = new_node
-    new_node.wins = rollout(board, next_state)
-    return new_node
+    if node.untried_actions != []:
+        action = choice(node.untried_actions)
+        node.untried_actions.remove(action)
+        next_state = board.next_state(state, action)
+        new_node = MCTSNode(parent=node, parent_action=action, action_list=board.legal_actions(next_state))
+        node.child_nodes[action] = new_node
+        new_node.wins = rollout(board, next_state)
+        return new_node
+    return None
     # Hint: return new_node
 
 
@@ -79,6 +70,10 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
+    
+    for action in board.legal_actions(state):
+        next_state = board.next_state(action)
+
     return 0
 
 
@@ -114,13 +109,8 @@ def think(board, state):
         node = root_node
 
         # Do MCTS - This is all you!
-        leaf, new_state = traverse_nodes(node, board, sampled_game, identity_of_bot)
-        new_leaf = expand_leaf(leaf, board, new_state)
-        backpropagate(new_leaf)
-
-    
-
-    
+        leaf = traverse_nodes(node, board, sampled_game, identity_of_bot)
+        rollout(board, board.next_state(choice(leaf.untried_actions)))
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
