@@ -4,8 +4,8 @@ from random import choice
 from math import sqrt, log, inf
 from random import random, randint
 
-num_nodes = 100
-explore_fraction = 1.5
+num_nodes = 810
+explore_fraction = 2.
 
 def heuristic(node):
     winrate = node.wins/node.visits
@@ -20,10 +20,10 @@ def heuristic(node):
 def get_leaves(node, leaf_nodes):
     #print("node: ", node)
     for action in node.untried_actions:
-        if action not in node.child_nodes.keys():
+        #if action not in node.child_nodes.keys():
             #print("node: ", node, "\nheuristic: ", heuristic(node))
-            leaf_nodes.insert(0, (heuristic(node), node))
-            break
+        leaf_nodes.insert(0, (heuristic(node), node))
+        break
         #else:
             #get_leaves(node.child_nodes[action], leaf_nodes)
     for child in node.child_nodes:
@@ -44,6 +44,7 @@ def traverse_nodes(node, board, state, identity):
     leaf_nodes = []
 
     get_leaves(node, leaf_nodes)
+    #print(leaf_nodes)
 
     best_node = None
     max_val = -1
@@ -83,6 +84,7 @@ def expand_leaf(node, board, state, identity):
             new_action = action
             break
 
+    node.untried_actions.remove(new_action)
     new_state = board.next_state(state, new_action)
     new_node = MCTSNode(parent=node, parent_action=new_action, action_list=board.legal_actions(new_state))
     #node.child_nodes[action] = MCTSNode(parent=node, parent_action=new_action, action_list=board.legal_actions(new_state))
@@ -92,11 +94,13 @@ def expand_leaf(node, board, state, identity):
     else:
         new_node.wins = 0
 
+    #new_node.wins = rollout(board, new_state)[identity]
+
     new_node.visits = 1
-    node.child_nodes[action] = new_node
+    node.child_nodes[new_action] = new_node
     backpropagate(node, new_node.wins)
 
-    return node
+    return new_node
     # Hint: return new_node
 
 
@@ -115,7 +119,11 @@ def rollout(board, state):
 
     return board.points_values(state)
 
-
+def ply(node):
+	if node.parent == None:
+		return -1
+	else:
+		return -1 * ply(node.parent)
 
 def backpropagate(node, won):
     """ Navigates the tree from a leaf node to the root, updating the win and visit count of each node along the path.
@@ -161,12 +169,14 @@ def think(board, state):
 
     max_val = -inf
     max_node = None
-    
-    for child in root_node.child_nodes:
-        if root_node.child_nodes[child].wins / root_node.child_nodes[child].visits > max_val:
-            max_node = child
-            max_val = root_node.child_nodes[child].wins / root_node.child_nodes[child].visits
 
+    for child in root_node.child_nodes:
+        if root_node.child_nodes[child].visits > max_val:
+            max_node = child
+            max_val = root_node.child_nodes[child].visits
+
+    print("Choices: ", root_node.child_nodes, "\nBest: ", root_node.child_nodes[max_node])
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    return root_node.child_nodes[max_node].parent_action
+    #return root_node.child_nodes[max_node].parent_action
+    return max_node
