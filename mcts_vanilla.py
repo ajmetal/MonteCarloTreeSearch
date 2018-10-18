@@ -2,9 +2,9 @@
 from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log, inf
-from random import random, randint
+import random
 
-num_nodes = 800
+num_nodes = 100
 explore_fraction = 2.
 
 def heuristic(node, depth):
@@ -90,11 +90,12 @@ def expand_leaf(node, board, state, identity):
     new_node = MCTSNode(parent=node, parent_action=new_action, action_list=board.legal_actions(new_state))
     #node.child_nodes[action] = MCTSNode(parent=node, parent_action=new_action, action_list=board.legal_actions(new_state))
 
-    if(rollout(board, new_state)[identity] == 1):
+    """if(rollout(board, new_state)[identity] == 1):
         new_node.wins = 1
     else:
-        new_node.wins = 0
+        new_node.wins = 0"""
 
+    new_node.wins = rollout(board, new_state)[identity]
     new_node.visits = 1
     node.child_nodes[new_action] = new_node
     backpropagate(node, new_node.wins)
@@ -113,7 +114,8 @@ def rollout(board, state):
     """
     while not board.is_ended(state):
         actions = board.legal_actions(state)
-        action = actions[randint(0, len(actions) - 1)]
+        #action = actions[randint(0, len(actions) - 1)]
+        action = random.choice(actions)
         state = board.next_state(state, action)
 
     return board.points_values(state)
