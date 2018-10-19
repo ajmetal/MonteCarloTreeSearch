@@ -3,8 +3,9 @@ from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log, inf
 import random
+from timeit import default_timer as time
 
-num_nodes = 300
+num_nodes = 1000
 explore_fraction = 2.
 
 def heuristic(node, depth):
@@ -150,6 +151,8 @@ def think(board, state):
         leaf = traverse_nodes(node, board, sampled_game, identity_of_bot)
         if leaf != None:
             expand_leaf(leaf, board, sampled_game, identity_of_bot)
+        else:
+            break
 
     max_val = -inf
     max_node = None
@@ -158,9 +161,8 @@ def think(board, state):
         if root_node.child_nodes[child].wins / root_node.child_nodes[child].visits > max_val:
             max_node = child
             max_val = root_node.child_nodes[child].wins / root_node.child_nodes[child].visits
-    #print("Best node: ", root_node.child_nodes[max_node])
-    #print("small: ", (.29 + 2 * sqrt(2*log(801)/7)), " vs large: ", (.39 + 2 * sqrt(2*log(801)/624)))
 
+    #print("VANILLA\ntime elapsed: ", time_elapsed, "\nroot visits: ", root_node.visits, "\n")
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
     return root_node.child_nodes[max_node].parent_action

@@ -1,10 +1,10 @@
-
 from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log, inf
 import random
+from timeit import default_timer as time
 
-num_nodes = 300
+num_nodes = 100
 explore_fraction = 2.
 
 def heuristic(node, depth):
@@ -80,6 +80,8 @@ def expand_leaf(node, board, state, identity):
     #root_node = MCTSNode(parent=None, parent_action=None, action_list=board.legal_actions(state))
     state = calculate_state(node, board, state)
 
+    if(len(node.untried_actions) == 0):
+        print("hol up")
     new_action = node.untried_actions[0]
     node.untried_actions.remove(new_action)
 
@@ -169,6 +171,8 @@ def think(board, state):
         leaf = traverse_nodes(node, board, sampled_game, identity_of_bot)
         if leaf != None:
             expand_leaf(leaf, board, sampled_game, identity_of_bot)
+        else:
+            break
 
     max_val = -inf
     max_node = None
@@ -180,6 +184,7 @@ def think(board, state):
     #print("Best node: ", root_node.child_nodes[max_node])
     #print("small: ", (.29 + 2 * sqrt(2*log(801)/7)), " vs large: ", (.39 + 2 * sqrt(2*log(801)/624)))
 
+    #print("Modified\ntime elapsed: ", time_elapsed, "\nroot visits: ", root_node.visits, "\n")
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
     return root_node.child_nodes[max_node].parent_action
