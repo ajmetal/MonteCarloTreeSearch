@@ -4,7 +4,7 @@ from random import choice
 from math import sqrt, log, inf
 import random
 
-num_nodes = 200
+num_nodes = 1000
 explore_fraction = 2.
 
 def heuristic(node, depth):
@@ -15,20 +15,25 @@ def heuristic(node, depth):
         # = .29 + 2 * sqrt(2*log(801)/7)
         explore = explore_fraction * sqrt(2*log(node.parent.visits) / node.visits)
         #explore = explore_fraction * (node.parent.visits / node.visits)
-    return winrate + explore + num_nodes/4 - depth
+    return winrate + explore
     #return random()
 
 def get_leaves(node, leaf_nodes, depth):
-    #print("node: ", node)
-    for action in node.untried_actions:
-        if action not in node.child_nodes.keys():
-            #print("node: ", node, "\nheuristic: ", heuristic(node))
-            leaf_nodes.insert(0, (heuristic(node, depth + 1), node))
-            break
-        #else:
-            #get_leaves(node.child_nodes[action], leaf_nodes)
-    for child in node.child_nodes:
-        get_leaves(node.child_nodes[child], leaf_nodes, depth + 1)
+    if(len(node.untried_actions) > 0):
+        leaf_nodes.insert(0, (heuristic(node, depth), node))
+
+    if(len(leaf_nodes) > 0):
+        return
+    else:
+        best_heur = -1
+        best_node = None
+        for child in node.child_nodes:
+            heur = heuristic(node.child_nodes[child], depth + 1)
+            if heur > best_heur:
+                best_heur = heur
+                best_node = node.child_nodes[child]
+        if best_node != None:
+            get_leaves(best_node, leaf_nodes, depth + 1)
 
 def traverse_nodes(node, board, state, identity):
     """ Traverses the tree until the end criterion are met.
@@ -44,9 +49,9 @@ def traverse_nodes(node, board, state, identity):
     """
     leaf_nodes = []
 
-    get_leaves(node, leaf_nodes, 0)
+    best_node = get_leaves(node, leaf_nodes, 0)
 
-    best_node = None
+    #best_node = None
     max_val = -1
     for i in range(0, len(leaf_nodes)):
         if leaf_nodes[i][0] > max_val:

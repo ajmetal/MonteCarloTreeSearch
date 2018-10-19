@@ -4,7 +4,7 @@ from random import choice
 from math import sqrt, log, inf
 import random
 
-num_nodes = 100
+num_nodes = 200
 explore_fraction = 2.
 
 def heuristic(node, depth):
