@@ -15,7 +15,7 @@ def heuristic(node, depth):
     	# = .29 + 2 * sqrt(2*log(801)/7)
         explore = explore_fraction * sqrt(2*log(node.parent.visits) / node.visits)
         #explore = explore_fraction * (node.parent.visits / node.visits)
-    return winrate + explore + 800 - depth
+    return winrate + explore + num_nodes/4 - depth
     #return random()
 
 def get_leaves(node, leaf_nodes, depth):
@@ -159,9 +159,9 @@ def think(board, state):
 
         # Do MCTS - This is all you!
         leaf = traverse_nodes(node, board, sampled_game, identity_of_bot)
-        if leaf == None:
-            print("Something wrong with leaf selection")
-        else:
+        if leaf != None:
+            #print("Something wrong with leaf selection")
+        #else:
             expand_leaf(leaf, board, sampled_game, identity_of_bot)
         #print(root_node.tree_to_string(4, 0))
 
@@ -172,7 +172,7 @@ def think(board, state):
         if root_node.child_nodes[child].wins / root_node.child_nodes[child].visits > max_val:
             max_node = child
             max_val = root_node.child_nodes[child].wins / root_node.child_nodes[child].visits
-    print("Best node: ", root_node.child_nodes[max_node])
+    #print("Best node: ", root_node.child_nodes[max_node])
     #print("small: ", (.29 + 2 * sqrt(2*log(801)/7)), " vs large: ", (.39 + 2 * sqrt(2*log(801)/624)))
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
